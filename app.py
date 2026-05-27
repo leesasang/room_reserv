@@ -1,5 +1,5 @@
 """
-ClassFit Streamlit App v3
+ClassFit Streamlit App v3.2
 강의실 예약·추천 시스템
 
 v3 수정 사항
@@ -9,6 +9,8 @@ v3 수정 사항
 - 예약 성공/취소 후 즉시 rerun하여 모든 화면에 반영
 - 예약하기 화면을 추천 예약/직접 예약/반복 예약 탭으로 통합
 - UI/UX 개선: 카드형 대시보드, 명확한 상태 배지, 한 화면 예약 플로우
+- v3.1: 라이트 테마 고정, 배경색/글씨색 대비 보정, 입력창/사이드바 색상 정리
+- v3.2: 사이드바에서 다크/라이트 모드 선택 가능, 테마 CSS 변수화
 """
 
 from __future__ import annotations
@@ -38,37 +40,245 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.markdown(
-    """
+def apply_theme_css(theme_choice: str) -> None:
+    """사이드바에서 선택한 화면 테마를 앱 전체에 적용한다."""
+    palettes = {
+        "라이트 모드": {
+            "cf-bg": "#F8FAFC",
+            "cf-panel": "#FFFFFF",
+            "cf-panel-soft": "#F1F5F9",
+            "cf-sidebar": "#FFFFFF",
+            "cf-border": "#E2E8F0",
+            "cf-text": "#0F172A",
+            "cf-muted": "#475569",
+            "cf-muted-2": "#64748B",
+            "cf-primary": "#2563EB",
+            "cf-primary-soft": "#EFF6FF",
+            "cf-hero-bg": "linear-gradient(135deg, #DBEAFE 0%, #FFFFFF 58%, #E0F2FE 100%)",
+            "cf-input-bg": "#FFFFFF",
+            "cf-input-border": "#CBD5E1",
+            "cf-shadow": "0 6px 18px rgba(15, 23, 42, 0.05)",
+            "cf-success-bg": "#F0FDF4",
+            "cf-success-text": "#166534",
+            "cf-success-border": "#BBF7D0",
+            "cf-info-bg": "#EFF6FF",
+            "cf-info-text": "#1D4ED8",
+            "cf-info-border": "#BFDBFE",
+            "cf-danger-bg": "#FEF2F2",
+            "cf-danger-text": "#991B1B",
+            "cf-danger-border": "#FECACA",
+        },
+        "다크 모드": {
+            "cf-bg": "#020617",
+            "cf-panel": "#0F172A",
+            "cf-panel-soft": "#111827",
+            "cf-sidebar": "#0B1120",
+            "cf-border": "#334155",
+            "cf-text": "#E5E7EB",
+            "cf-muted": "#CBD5E1",
+            "cf-muted-2": "#94A3B8",
+            "cf-primary": "#60A5FA",
+            "cf-primary-soft": "#172554",
+            "cf-hero-bg": "linear-gradient(135deg, #172554 0%, #0F172A 56%, #082F49 100%)",
+            "cf-input-bg": "#111827",
+            "cf-input-border": "#475569",
+            "cf-shadow": "0 10px 24px rgba(0, 0, 0, 0.28)",
+            "cf-success-bg": "#052E16",
+            "cf-success-text": "#BBF7D0",
+            "cf-success-border": "#166534",
+            "cf-info-bg": "#0C4A6E",
+            "cf-info-text": "#BAE6FD",
+            "cf-info-border": "#0284C7",
+            "cf-danger-bg": "#450A0A",
+            "cf-danger-text": "#FECACA",
+            "cf-danger-border": "#991B1B",
+        },
+    }
+
+    palette = palettes.get(theme_choice, palettes["다크 모드"])
+    css_vars = "\n".join(f"        --{name}: {value};" for name, value in palette.items())
+
+    css = """
     <style>
-    .main .block-container {padding-top: 1.2rem; padding-bottom: 3rem; max-width: 1400px;}
-    [data-testid="stSidebar"] {background: #f8fafc;}
+    :root {
+""" + css_vars + """
+    }
+
+    html, body, [data-testid="stAppViewContainer"], .stApp {
+        background: var(--cf-bg) !important;
+        color: var(--cf-text) !important;
+    }
+
+    .main .block-container {
+        padding-top: 1.2rem;
+        padding-bottom: 3rem;
+        max-width: 1400px;
+    }
+
+    h1, h2, h3, h4, h5, h6,
+    p, span, label, div,
+    [data-testid="stMarkdownContainer"],
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li {
+        color: var(--cf-text) !important;
+    }
+
+    .stCaptionContainer, .stCaptionContainer p,
+    small, .caption, [data-testid="stCaptionContainer"] {
+        color: var(--cf-muted-2) !important;
+    }
+
+    [data-testid="stSidebar"] {
+        background: var(--cf-sidebar) !important;
+        border-right: 1px solid var(--cf-border);
+    }
+    [data-testid="stSidebar"] * {
+        color: var(--cf-text) !important;
+    }
+
     .hero {
-        padding: 1.2rem 1.35rem; border-radius: 1.1rem;
-        background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 55%, #ecfeff 100%);
-        border: 1px solid #e5e7eb; margin-bottom: 1rem;
+        padding: 1.25rem 1.35rem;
+        border-radius: 1.1rem;
+        background: var(--cf-hero-bg);
+        border: 1px solid var(--cf-border);
+        margin-bottom: 1rem;
+        box-shadow: var(--cf-shadow);
     }
-    .hero h1 {font-size: 2rem; margin: 0 0 .35rem 0;}
-    .hero p {margin: 0; color: #475569;}
+    .hero h1 {
+        font-size: 2rem;
+        margin: 0 0 .35rem 0;
+        color: var(--cf-text) !important;
+    }
+    .hero p {
+        margin: 0;
+        color: var(--cf-muted) !important;
+    }
+
     .metric-card {
-        padding: 1rem; border-radius: 1rem; border: 1px solid #e5e7eb;
-        background: #ffffff; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        padding: 1rem;
+        border-radius: 1rem;
+        border: 1px solid var(--cf-border);
+        background: var(--cf-panel);
+        box-shadow: var(--cf-shadow);
     }
-    .metric-label {font-size: .86rem; color: #64748b; margin-bottom: .25rem;}
-    .metric-value {font-size: 1.55rem; font-weight: 800; color: #0f172a;}
-    .status-legend {display: flex; gap: .5rem; flex-wrap: wrap; margin: .5rem 0 1rem 0;}
-    .badge {padding: .25rem .55rem; border-radius: 999px; font-size: .85rem; border: 1px solid #e5e7eb;}
-    .ok {background: #f0fdf4; color: #166534; border-color: #bbf7d0;}
-    .blocked {background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;}
-    .reserved {background: #fef2f2; color: #b91c1c; border-color: #fecaca;}
-    .muted-box {padding: .8rem 1rem; border-radius: .9rem; background: #f8fafc; border: 1px solid #e5e7eb; color: #475569;}
-    .danger-box {padding: .8rem 1rem; border-radius: .9rem; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;}
-    .success-box {padding: .8rem 1rem; border-radius: .9rem; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;}
-    div[data-testid="stDataFrame"] {border-radius: .8rem; overflow: hidden;}
+    .metric-label {
+        font-size: .86rem;
+        color: var(--cf-muted-2) !important;
+        margin-bottom: .25rem;
+    }
+    .metric-value {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: var(--cf-text) !important;
+    }
+
+    .status-legend {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+        margin: .5rem 0 1rem 0;
+    }
+    .badge {
+        padding: .28rem .6rem;
+        border-radius: 999px;
+        font-size: .85rem;
+        font-weight: 700;
+        border: 1px solid var(--cf-border);
+    }
+    .ok {
+        background: var(--cf-success-bg);
+        color: var(--cf-success-text) !important;
+        border-color: var(--cf-success-border);
+    }
+    .blocked {
+        background: var(--cf-info-bg);
+        color: var(--cf-info-text) !important;
+        border-color: var(--cf-info-border);
+    }
+    .reserved {
+        background: var(--cf-danger-bg);
+        color: var(--cf-danger-text) !important;
+        border-color: var(--cf-danger-border);
+    }
+
+    .muted-box {
+        padding: .85rem 1rem;
+        border-radius: .9rem;
+        background: var(--cf-panel-soft);
+        border: 1px solid var(--cf-border);
+        color: var(--cf-text) !important;
+    }
+    .muted-box b { color: var(--cf-text) !important; }
+
+    .danger-box {
+        padding: .85rem 1rem;
+        border-radius: .9rem;
+        background: var(--cf-danger-bg);
+        border: 1px solid var(--cf-danger-border);
+        color: var(--cf-danger-text) !important;
+        font-weight: 700;
+    }
+    .success-box {
+        padding: .85rem 1rem;
+        border-radius: .9rem;
+        background: var(--cf-success-bg);
+        border: 1px solid var(--cf-success-border);
+        color: var(--cf-success-text) !important;
+        font-weight: 700;
+    }
+
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="textarea"] > div,
+    [data-testid="stDateInput"] input,
+    [data-testid="stNumberInput"] input,
+    textarea, input {
+        background-color: var(--cf-input-bg) !important;
+        color: var(--cf-text) !important;
+        border-color: var(--cf-input-border) !important;
+    }
+    div[data-baseweb="select"] span,
+    div[data-baseweb="input"] input,
+    div[data-baseweb="textarea"] textarea {
+        color: var(--cf-text) !important;
+    }
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] * {
+        background-color: var(--cf-panel) !important;
+        color: var(--cf-text) !important;
+    }
+    [role="option"]:hover {
+        background-color: var(--cf-panel-soft) !important;
+    }
+
+    .stButton > button,
+    .stDownloadButton > button,
+    [data-testid="stFormSubmitButton"] button {
+        border-radius: .65rem !important;
+        font-weight: 700 !important;
+    }
+
+    div[data-testid="stDataFrame"] {
+        border-radius: .8rem;
+        overflow: hidden;
+        background: var(--cf-panel) !important;
+        border: 1px solid var(--cf-border);
+    }
+
+    button[data-baseweb="tab"] {
+        color: var(--cf-muted) !important;
+        font-weight: 700;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: var(--cf-primary) !important;
+    }
+
+    hr {
+        border-color: var(--cf-border) !important;
+    }
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+    """
+    st.markdown(css, unsafe_allow_html=True)
 
 
 # -----------------------------------------------------------------------------
@@ -352,6 +562,14 @@ room_options = rooms_df["room_id"].tolist()
 
 st.sidebar.title("🏫 ClassFit")
 st.sidebar.caption("DB 연동형 강의실 예약 시스템")
+theme_choice = st.sidebar.selectbox(
+    "화면 테마",
+    ["다크 모드", "라이트 모드"],
+    index=0,
+    key="theme_choice",
+    help="다크/라이트 모드를 즉시 전환합니다. DB 데이터에는 영향을 주지 않습니다.",
+)
+apply_theme_css(theme_choice)
 page = st.sidebar.radio(
     "메뉴",
     ["대시보드", "예약하기", "실시간 현황판", "빈 강의실 찾기", "예약 관리", "데이터 관리"],
