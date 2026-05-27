@@ -1,4 +1,6 @@
 PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+PRAGMA busy_timeout = 10000;
 
 CREATE TABLE IF NOT EXISTS rooms (
     room_id TEXT PRIMARY KEY,
@@ -43,8 +45,14 @@ CREATE TABLE IF NOT EXISTS reservations (
 CREATE INDEX IF NOT EXISTS idx_blocked_room_day_period
 ON blocked_schedules(room_id, day, period);
 
+CREATE INDEX IF NOT EXISTS idx_blocked_day_period
+ON blocked_schedules(day, period);
+
 CREATE INDEX IF NOT EXISTS idx_reservations_room_date_period
 ON reservations(room_id, date, start_period, end_period);
+
+CREATE INDEX IF NOT EXISTS idx_reservations_date
+ON reservations(date);
 
 CREATE INDEX IF NOT EXISTS idx_rooms_capacity
 ON rooms(capacity);
